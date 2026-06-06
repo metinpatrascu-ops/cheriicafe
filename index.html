@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CHERII CAFE | Un Sanctuaire Zen à Paris</title>
-    
-    <!-- Premium Google Fonts: Cormorant Garamond (Serif), Jost (Sans-serif) -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS -->
+
+    <!-- GSAP + ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/SplitText.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,697 +20,975 @@
                 extend: {
                     colors: {
                         cherii: {
-                            bg: '#161311',       /* Fundalul intunecat (espresso/umbra) */
-                            text: '#f5f0e6',     /* Alb-crem luminos pentru textul principal (foarte vizibil) */
-                            muted: '#b5a999',    /* Crem estompat pentru gramaje si retete */
-                            gold: '#d4b595',     /* Auriu/Lemn cald pentru preturi si titluri */
-                            accent: '#a63c3c'    /* Rosu de artar japonez */
+                            bg:     '#0f0d0b',
+                            panel:  '#161311',
+                            text:   '#f5f0e6',
+                            muted:  '#b5a999',
+                            gold:   '#d4b595',
+                            accent: '#a63c3c'
                         }
                     },
                     fontFamily: {
-                        sans: ['Jost', 'sans-serif'],
+                        sans:  ['Jost', 'sans-serif'],
                         serif: ['Cormorant Garamond', 'serif'],
                     }
                 }
             }
         }
     </script>
-    
+
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        
+
         body {
-            /* Fotografia 2 ca fundal global, fixa, care nu se misca cand dai scroll */
-            background-image: url('final 2.png');
-            background-attachment: fixed;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover;
-            color: theme('colors.cherii.text');
+            background: #0f0d0b;
+            color: #f5f0e6;
             overflow-x: hidden;
+            font-family: 'Jost', sans-serif;
+            font-weight: 300;
         }
 
-        /* Filtrul "Moody" care sta peste imaginea de fundal ca textul luminos sa fie foarte clar */
-        .global-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(20, 16, 14, 0.88); /* Un negru-maroniu transparent foarte elegant */
-            z-index: -1;
-            pointer-events: none;
+        /* ─── LOADER ─────────────────────────────── */
+        #loader {
+            position: fixed; inset: 0; z-index: 1000;
+            background: #0f0d0b;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 32px;
         }
-
-        /* Imagini in Parallax pentru Hero si Footer */
-        .parallax-section {
-            background-attachment: fixed;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover;
-        }
-
-        /* Efect de imagine in reviste (usoara marire la hover) */
-        .img-editorial {
-            transition: transform 1.5s cubic-bezier(0.2, 1, 0.2, 1), filter 1s ease;
-            filter: brightness(0.9);
-        }
-        .img-container {
+        #loader-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(3rem, 10vw, 7rem);
+            letter-spacing: 0.4em;
+            color: #f5f0e6;
             overflow: hidden;
-            border-radius: 4px;
         }
-        .img-container:hover .img-editorial {
-            transform: scale(1.03);
-            filter: brightness(1.05);
+        #loader-name span {
+            display: inline-block;
+            transform: translateY(110%);
         }
-
-        /* Liniile Meniului Premium */
-        .menu-row {
-            transition: all 0.3s ease;
+        #loader-line {
+            width: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, #d4b595, transparent);
         }
-        .menu-row:hover {
-            transform: translateX(6px);
-        }
-
-        /* Scrollbar personalizat */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: theme('colors.cherii.bg'); }
-        ::-webkit-scrollbar-thumb { background: theme('colors.cherii.gold'); }
-
-        .reveal {
+        #loader-sub {
+            font-size: 0.65rem;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            color: #b5a999;
             opacity: 0;
-            transform: translateY(30px);
-            transition: all 1.2s cubic-bezier(0.2, 1, 0.2, 1);
         }
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
+
+        /* ─── CURSOR ──────────────────────────────── */
+        #c-dot  { position: fixed; width: 8px; height: 8px; background: #d4b595; border-radius: 50%; pointer-events: none; z-index: 900; transform: translate(-50%,-50%); transition: width .3s, height .3s; }
+        #c-ring { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(212,181,149,.4); border-radius: 50%; pointer-events: none; z-index: 899; transform: translate(-50%,-50%); }
+        body:has(a:hover) #c-dot  { width: 16px; height: 16px; }
+        body:has(a:hover) #c-ring { width: 60px; height: 60px; border-color: rgba(212,181,149,.7); }
+        @media (max-width: 768px) { #c-dot, #c-ring { display: none; } * { cursor: auto !important; } }
+        * { cursor: none; }
+
+        /* ─── HEADER ──────────────────────────────── */
+        #main-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+            padding: 28px 48px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: background .6s ease, padding .4s ease, box-shadow .4s ease;
         }
-        .delay-100 { transition-delay: 100ms; }
-        .delay-200 { transition-delay: 200ms; }
-        .delay-300 { transition-delay: 300ms; }
+        #main-header.scrolled {
+            background: rgba(15,13,11,0.96);
+            backdrop-filter: blur(16px);
+            padding: 18px 48px;
+            box-shadow: 0 1px 0 rgba(212,181,149,0.08);
+        }
+        .nav-link {
+            font-size: 0.65rem; letter-spacing: 0.35em; text-transform: uppercase;
+            color: #f5f0e6; text-decoration: none; font-weight: 400;
+            position: relative; padding-bottom: 2px;
+        }
+        .nav-link::after {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            width: 0; height: 1px; background: #d4b595;
+            transition: width .4s cubic-bezier(.2,1,.2,1);
+        }
+        .nav-link:hover::after { width: 100%; }
+        .nav-link:hover { color: #d4b595; }
+
+        /* hamburger */
+        #hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; padding: 4px; }
+        .hb { display: block; width: 22px; height: 1px; background: #f5f0e6; transition: all .4s ease; }
+        #hamburger.open .hb:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+        #hamburger.open .hb:nth-child(2) { opacity: 0; }
+        #hamburger.open .hb:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+        @media (max-width: 768px) { #hamburger { display: flex; } #desktop-nav { display: none; } }
+
+        /* mobile nav overlay */
+        #mobile-nav {
+            position: fixed; inset: 0; z-index: 490; background: #0f0d0b;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transform: translateY(-100%); transition: transform .7s cubic-bezier(.2,1,.2,1);
+        }
+        #mobile-nav.open { transform: translateY(0); }
+        #mobile-nav a {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            letter-spacing: 0.2em; text-transform: uppercase;
+            color: #f5f0e6; text-decoration: none;
+            display: block; margin: 12px 0;
+            transition: color .3s, letter-spacing .3s;
+        }
+        #mobile-nav a:hover { color: #d4b595; letter-spacing: 0.3em; }
+
+        /* ─── HERO ────────────────────────────────── */
+        #hero {
+            height: 100vh; width: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        #hero-bg {
+            position: absolute; inset: 0;
+            background-image: url('final 1.png');
+            background-size: cover; background-position: center;
+            transform: scale(1.08);
+            will-change: transform;
+        }
+        #hero-veil {
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, rgba(15,13,11,.55) 0%, rgba(15,13,11,.35) 50%, rgba(15,13,11,.85) 100%);
+        }
+        #hero-content { position: relative; z-index: 2; text-align: center; padding: 0 24px; }
+        #hero-eyebrow {
+            font-size: 0.62rem; letter-spacing: 0.6em; text-transform: uppercase;
+            color: #d4b595; margin-bottom: 32px; opacity: 0;
+        }
+        #hero-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(4rem, 12vw, 10rem);
+            font-weight: 300; line-height: 1;
+            letter-spacing: 0.08em; color: #f5f0e6;
+            overflow: hidden;
+        }
+        #hero-title .word { display: inline-block; overflow: hidden; }
+        #hero-title .word .inner { display: inline-block; transform: translateY(105%); }
+        #hero-title em { font-style: italic; color: rgba(245,240,230,.85); }
+        #hero-sub {
+            font-size: 0.7rem; letter-spacing: 0.4em; text-transform: uppercase;
+            color: #f5f0e6; margin-top: 40px; opacity: 0;
+        }
+        #hero-scroll {
+            position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            opacity: 0; z-index: 2;
+        }
+        #hero-scroll span { font-size: 0.55rem; letter-spacing: 0.5em; text-transform: uppercase; color: #b5a999; }
+        .scroll-line {
+            width: 1px; height: 60px;
+            background: linear-gradient(to bottom, rgba(212,181,149,0), #d4b595);
+            animation: scrollPulse 2s ease-in-out infinite;
+        }
+        @keyframes scrollPulse { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+
+        /* ─── SECTION BASE ────────────────────────── */
+        section { position: relative; }
+
+        /* ─── CHAPTER INTRO (grand text reveal) ─── */
+        .chapter {
+            min-height: 60vh; display: flex; align-items: center;
+            padding: clamp(80px, 10vw, 160px) clamp(24px, 8vw, 120px);
+        }
+        .chapter-label {
+            font-size: 0.6rem; letter-spacing: 0.5em; text-transform: uppercase;
+            color: #a63c3c; margin-bottom: 20px; display: block; font-weight: 500;
+        }
+        .chapter-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.8rem, 6vw, 5.5rem);
+            font-weight: 300; line-height: 1.2;
+            color: #f5f0e6;
+        }
+        .chapter-title .line { overflow: hidden; display: block; }
+        .chapter-title .line .inner { display: block; transform: translateY(100%); }
+        .chapter-body {
+            font-size: clamp(1rem, 1.4vw, 1.15rem);
+            line-height: 1.9; color: rgba(245,240,230,.8);
+            max-width: 520px; font-weight: 300;
+        }
+        .chapter-body p + p { margin-top: 24px; }
+        .chapter-body .gold { color: #d4b595; font-weight: 400; }
+
+        /* ─── HORIZONTAL MARQUEE ──────────────────── */
+        .marquee-wrap { overflow: hidden; border-top: 1px solid rgba(212,181,149,.12); border-bottom: 1px solid rgba(212,181,149,.12); padding: 24px 0; }
+        .marquee-track { display: flex; gap: 64px; width: max-content; animation: marqueeScroll 22s linear infinite; }
+        .marquee-track.reverse { animation-direction: reverse; }
+        .marquee-item { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.2rem, 2.5vw, 1.8rem); white-space: nowrap; color: rgba(245,240,230,.25); letter-spacing: 0.15em; }
+        .marquee-item.highlight { color: #d4b595; font-style: italic; }
+        @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* ─── PARALLAX IMAGE SPLITS ───────────────── */
+        .split-section {
+            display: grid; grid-template-columns: 1fr 1fr;
+            min-height: 80vh;
+        }
+        @media (max-width: 900px) { .split-section { grid-template-columns: 1fr; } }
+        .split-img { overflow: hidden; position: relative; min-height: 60vmin; }
+        .split-img img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.1); }
+        .split-text {
+            display: flex; flex-direction: column; justify-content: center;
+            padding: clamp(48px, 8vw, 120px) clamp(24px, 6vw, 80px);
+            background: #161311;
+        }
+
+        /* ─── STATS ROW ───────────────────────────── */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            border-top: 1px solid rgba(212,181,149,.12);
+            border-bottom: 1px solid rgba(212,181,149,.12);
+        }
+        @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } }
+        .stat-block {
+            padding: clamp(40px, 6vw, 80px) clamp(24px, 4vw, 56px);
+            border-right: 1px solid rgba(212,181,149,.12);
+            text-align: center;
+        }
+        .stat-block:last-child { border-right: none; }
+        .stat-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(3.5rem, 7vw, 6rem);
+            font-weight: 300; color: #d4b595; display: block; line-height: 1;
+        }
+        .stat-label { font-size: 0.6rem; letter-spacing: 0.4em; text-transform: uppercase; color: #b5a999; margin-top: 12px; display: block; }
+
+        /* ─── MANIFESTO ───────────────────────────── */
+        #manifesto {
+            padding: clamp(80px, 12vw, 180px) clamp(24px, 8vw, 120px);
+            max-width: 1100px; margin: 0 auto;
+            text-align: center;
+        }
+        #manifesto-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1.8rem, 4vw, 3.5rem);
+            font-weight: 300; line-height: 1.5;
+            color: #f5f0e6;
+        }
+        #manifesto-text .word { display: inline-block; opacity: 0; transform: translateY(16px); }
+
+        /* ─── MENU ────────────────────────────────── */
+        #menu-section {
+            padding: clamp(80px, 10vw, 160px) clamp(24px, 8vw, 120px);
+            background: #0f0d0b;
+        }
+        .menu-tabs { display: flex; gap: 0; margin-bottom: 64px; border-bottom: 1px solid rgba(212,181,149,.12); flex-wrap: wrap; }
+        .menu-tab {
+            font-size: 0.62rem; letter-spacing: 0.4em; text-transform: uppercase;
+            color: #b5a999; background: none; border: none;
+            padding: 16px 32px; cursor: none;
+            position: relative; transition: color .3s;
+        }
+        .menu-tab::after {
+            content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+            height: 1px; background: #d4b595; transform: scaleX(0);
+            transition: transform .4s cubic-bezier(.2,1,.2,1);
+        }
+        .menu-tab.active { color: #d4b595; }
+        .menu-tab.active::after { transform: scaleX(1); }
+        .menu-tab:hover { color: #f5f0e6; }
+        .menu-panel { display: none; }
+        .menu-panel.active { display: block; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 80px; }
+        @media (max-width: 900px) { .menu-grid { grid-template-columns: 1fr; } }
+        .menu-category { margin-bottom: 56px; }
+        .menu-cat-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem; font-style: italic; color: #d4b595;
+            border-bottom: 1px solid rgba(212,181,149,.15); padding-bottom: 16px; margin-bottom: 28px;
+        }
+        .menu-item {
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(181,169,153,.08);
+            display: flex; justify-content: space-between; align-items: baseline;
+            gap: 16px; transition: padding-left .3s ease;
+        }
+        .menu-item:hover { padding-left: 8px; }
+        .menu-item-info { flex: 1; min-width: 0; }
+        .menu-item-name { font-size: 1rem; letter-spacing: 0.04em; color: #f5f0e6; display: block; }
+        .menu-item-name.special { color: #a63c3c; font-weight: 400; }
+        .menu-item-desc { font-size: 0.78rem; color: #b5a999; font-style: italic; margin-top: 3px; display: block; }
+        .menu-item-price { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: #d4b595; white-space: nowrap; flex-shrink: 0; }
+
+        /* ─── GALLERY ─────────────────────────────── */
+        #gallery {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            grid-template-rows: auto auto;
+            gap: 3px;
+        }
+        @media (max-width: 768px) { #gallery { grid-template-columns: 1fr; grid-template-rows: auto; } }
+        .gallery-cell { overflow: hidden; position: relative; }
+        .gallery-cell img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.07); transition: transform 1.6s cubic-bezier(.2,1,.2,1); }
+        .gallery-cell:hover img { transform: scale(1.02); }
+        .gallery-cell .caption {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 20px 24px;
+            background: linear-gradient(transparent, rgba(15,13,11,.85));
+            font-size: 0.58rem; letter-spacing: 0.45em; text-transform: uppercase;
+            color: #d4b595; font-weight: 500;
+            transform: translateY(100%); transition: transform .5s ease;
+        }
+        .gallery-cell:hover .caption { transform: translateY(0); }
+        .gallery-cell.tall { grid-row: span 2; aspect-ratio: 4/7; }
+        .gallery-cell.wide { aspect-ratio: 5/4; }
+
+        /* ─── STORY PANELS (scroll-driven) ───────── */
+        #story {
+            background: #161311;
+            padding: clamp(80px, 10vw, 160px) 0;
+        }
+        .story-panel {
+            display: grid; grid-template-columns: 1fr 1fr;
+            min-height: 70vh; border-bottom: 1px solid rgba(212,181,149,.06);
+        }
+        @media (max-width: 900px) { .story-panel { grid-template-columns: 1fr; min-height: auto; } }
+        .story-panel:nth-child(even) { direction: rtl; }
+        .story-panel:nth-child(even) > * { direction: ltr; }
+        .story-panel-img { overflow: hidden; }
+        .story-panel-img img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.1); will-change: transform; }
+        .story-panel-text {
+            display: flex; flex-direction: column; justify-content: center;
+            padding: clamp(48px, 7vw, 100px) clamp(32px, 6vw, 90px);
+        }
+        .story-num {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(5rem, 12vw, 10rem);
+            font-weight: 300; color: rgba(212,181,149,.08);
+            line-height: 1; margin-bottom: -24px; display: block;
+        }
+        .story-label { font-size: 0.58rem; letter-spacing: 0.5em; text-transform: uppercase; color: #a63c3c; margin-bottom: 16px; font-weight: 500; }
+        .story-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 3.5vw, 3rem);
+            font-weight: 300; color: #f5f0e6; line-height: 1.3;
+            margin-bottom: 24px;
+        }
+        .story-body { font-size: 1rem; line-height: 1.85; color: rgba(245,240,230,.7); }
+
+        /* ─── RESERVATION ─────────────────────────── */
+        #reservation {
+            padding: clamp(100px, 14vw, 200px) clamp(24px, 8vw, 120px);
+            text-align: center;
+            background: #0f0d0b;
+            overflow: hidden; position: relative;
+        }
+        #res-bg-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(10rem, 25vw, 22rem);
+            font-weight: 300; color: rgba(212,181,149,.03);
+            white-space: nowrap; letter-spacing: 0.1em; user-select: none; pointer-events: none;
+        }
+        #reservation h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 300; color: #f5f0e6; margin-bottom: 24px;
+            position: relative; z-index: 1;
+        }
+        #reservation p { color: #b5a999; font-size: 1rem; line-height: 1.8; max-width: 480px; margin: 0 auto 48px; position: relative; z-index: 1; }
+        .cta-btn {
+            display: inline-block; position: relative; overflow: hidden;
+            border: 1px solid rgba(212,181,149,.5); padding: 20px 64px;
+            font-size: 0.62rem; letter-spacing: 0.45em; text-transform: uppercase;
+            color: #f5f0e6; text-decoration: none; font-weight: 400;
+            transition: color .5s; z-index: 1;
+        }
+        .cta-btn::before {
+            content: ''; position: absolute; inset: 0;
+            background: #d4b595; transform: scaleX(0); transform-origin: left;
+            transition: transform .55s cubic-bezier(.2,1,.2,1);
+        }
+        .cta-btn:hover::before { transform: scaleX(1); }
+        .cta-btn:hover { color: #0f0d0b; }
+        .cta-btn span { position: relative; z-index: 1; }
+        .cta-note { margin-top: 24px; font-size: 0.68rem; letter-spacing: 0.3em; color: rgba(181,169,153,.5); position: relative; z-index: 1; }
+        .cta-note a { color: #d4b595; }
+
+        /* ─── FOOTER ──────────────────────────────── */
+        #footer {
+            border-top: 1px solid rgba(212,181,149,.1);
+            padding: clamp(60px, 8vw, 120px) clamp(24px, 8vw, 120px) clamp(32px, 4vw, 56px);
+            display: grid; grid-template-columns: 1fr 1fr 1fr;
+            gap: 48px;
+        }
+        @media (max-width: 768px) { #footer { grid-template-columns: 1fr; } }
+        .footer-brand-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem; letter-spacing: 0.25em; color: #d4b595; display: block; margin-bottom: 16px;
+        }
+        .footer-tagline { font-size: 0.85rem; color: rgba(245,240,230,.5); line-height: 1.7; }
+        .footer-socials { display: flex; gap: 24px; margin-top: 28px; }
+        .footer-social { font-size: 0.58rem; letter-spacing: 0.35em; text-transform: uppercase; color: rgba(245,240,230,.4); text-decoration: none; transition: color .3s, letter-spacing .3s; }
+        .footer-social:hover { color: #d4b595; letter-spacing: 0.45em; }
+        .footer-col h5 { font-size: 0.58rem; letter-spacing: 0.45em; text-transform: uppercase; color: #a63c3c; margin-bottom: 20px; font-weight: 500; }
+        .footer-col p, .footer-col a { font-size: 0.9rem; color: rgba(245,240,230,.7); line-height: 1.8; text-decoration: none; display: block; }
+        .footer-col a:hover { color: #d4b595; }
+        .footer-hours li { display: flex; justify-content: space-between; font-size: 0.88rem; color: rgba(245,240,230,.7); padding: 6px 0; border-bottom: 1px solid rgba(212,181,149,.05); }
+        .footer-hours li:last-child { color: rgba(212,181,149,.75); }
+        .footer-bottom {
+            grid-column: 1 / -1; padding-top: 32px;
+            border-top: 1px solid rgba(212,181,149,.08);
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 16px;
+        }
+        .footer-bottom p, .footer-bottom a { font-size: 0.62rem; letter-spacing: 0.25em; color: rgba(245,240,230,.3); text-decoration: none; text-transform: uppercase; transition: color .3s; }
+        .footer-bottom a:hover { color: #d4b595; }
+
+        /* ─── GRAIN OVERLAY ───────────────────────── */
+        .grain::after {
+            content: ''; position: fixed; inset: -50%;
+            width: 200%; height: 200%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+            opacity: .022; pointer-events: none; z-index: 800;
+            animation: grainAnim .8s steps(2) infinite;
+        }
+        @keyframes grainAnim { 0%{transform:translate(0,0)} 25%{transform:translate(-2%,-1%)} 50%{transform:translate(1%,2%)} 75%{transform:translate(2%,-1%)} 100%{transform:translate(0,0)} }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0f0d0b; }
+        ::-webkit-scrollbar-thumb { background: #d4b595; }
     </style>
 </head>
-<body class="font-sans font-light antialiased selection:bg-cherii-gold selection:text-cherii-bg">
+<body class="grain">
 
-    <!-- OVERLAY GLOBAL -->
-    <div class="global-overlay"></div>
+    <!-- CURSOR -->
+    <div id="c-dot"></div>
+    <div id="c-ring"></div>
 
-    <!-- HEADER (Navigatia) -->
-    <header class="fixed w-full top-0 z-50 p-6 md:p-10 transition-all duration-300 flex justify-between items-center bg-gradient-to-b from-cherii-bg/90 to-transparent">
-        <div class="drop-shadow-lg">
-            <a href="#" class="text-3xl font-serif tracking-[0.2em] uppercase text-cherii-text">CHERII</a>
-        </div>
-        <nav class="hidden md:flex space-x-12 text-xs tracking-[0.3em] uppercase text-cherii-text font-medium drop-shadow-md">
-            <a href="#histoire" class="hover:text-cherii-gold transition-colors">Histoire</a>
-            <a href="#carte" class="hover:text-cherii-gold transition-colors">La Carte</a>
-            <a href="#ambiance" class="hover:text-cherii-gold transition-colors">Ambiance</a>
-            <a href="#contact" class="hover:text-cherii-gold transition-colors">Contact</a>
+    <!-- LOADER -->
+    <div id="loader">
+        <div id="loader-name"><span>C</span><span>H</span><span>E</span><span>R</span><span>I</span><span>I</span></div>
+        <div id="loader-line" style="max-width:200px; width:100%;"></div>
+        <p id="loader-sub">Paris · Café de Spécialité</p>
+    </div>
+
+    <!-- HEADER -->
+    <header id="main-header">
+        <a href="#" style="font-family:'Cormorant Garamond',serif; font-size:1.6rem; letter-spacing:0.3em; text-transform:uppercase; color:#f5f0e6; text-decoration:none;">CHERII</a>
+        <nav id="desktop-nav" style="display:flex; gap:40px;">
+            <a href="#histoire" class="nav-link">Histoire</a>
+            <a href="#menu-section" class="nav-link">La Carte</a>
+            <a href="#gallery" class="nav-link">Ambiance</a>
+            <a href="#reservation" class="nav-link">Réservation</a>
+            <a href="#footer" class="nav-link">Contact</a>
         </nav>
+        <button id="hamburger" aria-label="Menu">
+            <span class="hb"></span><span class="hb"></span><span class="hb"></span>
+        </button>
     </header>
 
-    <!-- 1. HERO SECTION (final 1.png) -->
-    <section class="relative h-screen w-full parallax-section shadow-2xl" style="background-image: url('final 1.png');">
-        <div class="absolute inset-0 bg-[#161311]/60"></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-center px-4 drop-shadow-2xl">
-            <p class="text-xs tracking-[0.4em] uppercase mb-8 reveal text-cherii-gold font-medium">Paris, France</p>
-            <h1 class="text-6xl md:text-8xl lg:text-9xl font-serif tracking-widest text-center reveal delay-100 text-cherii-text" style="line-height: 1.1;">
-                L'Harmonie<br><span class="italic font-light text-cherii-text/90">du Temps</span>
+    <!-- MOBILE NAV -->
+    <div id="mobile-nav">
+        <a href="#histoire">Histoire</a>
+        <a href="#menu-section">La Carte</a>
+        <a href="#gallery">Ambiance</a>
+        <a href="#reservation">Réservation</a>
+        <a href="#footer">Contact</a>
+        <p style="position:absolute;bottom:40px;font-size:0.6rem;letter-spacing:0.5em;text-transform:uppercase;color:#b5a999;">Paris, France</p>
+    </div>
+
+    <!-- ══════════ HERO ══════════ -->
+    <section id="hero">
+        <div id="hero-bg"></div>
+        <div id="hero-veil"></div>
+        <div id="hero-content">
+            <p id="hero-eyebrow">Paris, France · 2024</p>
+            <h1 id="hero-title">
+                <span class="word"><span class="inner">L'Harmonie</span></span><br>
+                <span class="word"><span class="inner"><em>du Temps</em></span></span>
             </h1>
-            <p class="mt-10 text-sm md:text-base tracking-[0.2em] uppercase font-medium reveal delay-200 text-cherii-text">
-                Café de Spécialité & Pâtisserie
-            </p>
+            <p id="hero-sub">Café de Spécialité &nbsp;·&nbsp; Pâtisserie &nbsp;·&nbsp; Brunch</p>
         </div>
-        <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-px h-24 bg-cherii-text/30 reveal delay-300"></div>
-    </section>
-
-    <!-- 2. HISTOIRE SECTION (final 3.png) - POVESTEA -->
-    <section id="histoire" class="py-32 md:py-48 px-6 md:px-16 max-w-[1600px] mx-auto">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24 items-center">
-            <div class="lg:col-span-5 lg:col-start-2 reveal">
-                <h2 class="text-xs tracking-[0.3em] uppercase text-cherii-accent mb-6 font-medium">Notre Philosophie</h2>
-                <h3 class="text-4xl md:text-5xl font-serif text-cherii-text leading-snug mb-8 drop-shadow-md">
-                    Un sanctuaire urbain pensé comme une pause poétique.
-                </h3>
-                <div class="space-y-6 text-cherii-text/90 text-lg leading-relaxed font-light">
-                    <p>
-                        Bienvenue chez <span class="text-cherii-gold font-medium">CHERII CAFE</span>. Conçu autour de matériaux nobles et bruts, notre espace s'inspire de l'esthétique japonaise pour créer une atmosphère de sérénité absolue en plein cœur de la ville.
-                    </p>
-                    <p>
-                        Sous la lumière douce de nos lanternes en papier, entourés par la présence apaisante de notre végétation intérieure, nous vous invitons à déguster des cafés de spécialité torréfiés avec soin et des créations culinaires raffinées. Chaque détail, de la texture du bois au parfum de l'espresso, est une invitation à l'ancrage.
-                    </p>
-                </div>
-            </div>
-            
-            <div class="lg:col-span-6 img-container reveal delay-200 shadow-2xl">
-                <img src="final 3.png" alt="Cherii Cafe Interior" class="img-editorial w-full h-auto aspect-[4/5] object-cover border border-cherii-gold/20">
-            </div>
+        <div id="hero-scroll">
+            <span>Défiler</span>
+            <div class="scroll-line"></div>
         </div>
     </section>
 
-    <!-- 3. MENIU SECTION - TOATE CELE 40+ DE PRODUSE -->
-    <section id="carte" class="py-24 px-6 md:px-16 max-w-[1600px] mx-auto">
-        <div class="text-center mb-24 reveal">
-            <h2 class="text-sm tracking-[0.4em] uppercase text-cherii-accent mb-4 font-medium">Dégustation</h2>
-            <h3 class="text-5xl md:text-7xl font-serif text-cherii-text drop-shadow-lg">La Carte</h3>
+    <!-- ══════════ MARQUEE 1 ══════════ -->
+    <div class="marquee-wrap">
+        <div class="marquee-track">
+            <span class="marquee-item">Specialty Coffee</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Matcha Cérémonial</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Pâtisserie Artisanale</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Brunch Parisien</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item highlight italic">L'Art de Ralentir</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Specialty Coffee</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Matcha Cérémonial</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Pâtisserie Artisanale</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Brunch Parisien</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item highlight italic">L'Art de Ralentir</span>
+            <span class="marquee-item highlight">·</span>
         </div>
+    </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-24 gap-y-32 items-start">
-            
-            <!-- COFFEE DRINKS -->
-            <div class="reveal">
-                <h4 class="text-3xl font-serif italic mb-10 text-cherii-gold border-b border-cherii-gold/20 pb-4">Coffee Drinks</h4>
-                <ul class="space-y-8">
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Espresso</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">2,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Extrait pur et intense (30ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Double Espresso</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">3,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Double dose de café de spécialité (60ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Americano</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">3,50 € / 4,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Small (240ml) / Large (350ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Cappuccino</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">4,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Espresso et lait texturé soyeux (180ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Flat White</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">4,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Double ristretto, micro-mousse de lait fine (180ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Latte</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">5,00 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Espresso doux et lait monté (250ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Filter Coffee</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">4,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Extraction lente V60, pure origine (250ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Seasonal Latte</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">6,00 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Sirop artisanal de saison, espresso, lait (250ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide text-cherii-accent font-medium">Black Sesame Latte</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">8,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Pâte de sésame noir torréfié maison, espresso, lait (250ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide text-cherii-accent font-medium">Pistachio Latte</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">8,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Purée de pistache 100%, espresso, lait texturé (250ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Orange Espresso Tonic</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">7,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Double espresso, tonic artisanal, zestes d'orange (300ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Salted Vanilla Latte</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">6,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Sirop de vanille de Madagascar, pointe de sel (250ml)</span>
-                    </li>
-                    <li class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Tiramisu Latte</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">7,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Inspiré du dessert italien, poudre de cacao fine (250ml)</span>
-                    </li>
-                </ul>
-            </div>
+    <!-- ══════════ MANIFESTO ══════════ -->
+    <div id="manifesto">
+        <p id="manifesto-text">
+            Chez <em style="font-style:italic;color:#d4b595;">Cherii</em>, nous croyons que le café est une pause.
+            Pas une course. Un espace pensé pour vous sortir du bruit —
+            où chaque tasse est préparée avec <em style="font-style:italic;color:#d4b595;">intention</em>,
+            et chaque instant vécu <em style="font-style:italic;color:#d4b595;">pleinement</em>.
+        </p>
+    </div>
 
-            <div class="space-y-32">
-                <!-- Matcha & Tea -->
-                <div class="reveal delay-100">
-                    <h4 class="text-3xl font-serif italic mb-10 text-cherii-gold border-b border-cherii-gold/20 pb-4">Matcha & Thés</h4>
-                    <ul class="space-y-8">
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Matcha Latte</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">6,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Matcha de Cérémonie d'Uji, monté au fouet bambou (250ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide text-cherii-accent font-medium">Strawberry Matcha</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">7,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Purée de fraises fraîches, lait, matcha cérémonial (300ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Hojicha Latte</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">6,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Thé vert japonais torréfié, notes fumées (250ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Genmaicha Latte</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">5,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Thé vert au riz brun soufflé (250ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Iced Matcha / Iced Hojicha</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">6,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Versions glacées rafraîchissantes (300ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Jasmine / Sencha / Oolong / Black Tea</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">4,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Thé en vrac premium infusé à la minute (300ml)</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- Cold Drinks -->
-                <div class="reveal delay-200">
-                    <h4 class="text-3xl font-serif italic mb-10 text-cherii-gold border-b border-cherii-gold/20 pb-4">Boissons Fraîches</h4>
-                    <ul class="space-y-8">
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Yuzu Tonic</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">8,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Agrume japonais yuzu, tonic artisanal (300ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">In-house Lemonade / Berry Soda</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">6,00 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Limonade maison pressée à froid (300ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Coffee Tonic</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">6,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Tonic de qualité surmonté d'un shot d'espresso (300ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Seasonal Cream-top Drink</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">7,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Boisson froide, crème fouettée parfumée (250ml)</span>
-                        </li>
-                        <li class="menu-row flex flex-col">
-                            <div class="flex justify-between items-baseline w-full text-cherii-text">
-                                <span class="text-xl tracking-wide">Sparkling Tea / Fruit Tea</span>
-                                <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                                <span class="font-serif text-2xl text-cherii-gold">6,50 €</span>
-                            </div>
-                            <span class="text-sm text-cherii-muted mt-1 italic">Infusion pétillante au verre (200ml)</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="reveal md:col-span-2 mt-12">
-                <h4 class="text-3xl font-serif italic mb-10 text-cherii-gold border-b border-cherii-gold/20 pb-4">Brunch, Toasts & Sandos</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-24 gap-y-10">
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide text-cherii-accent font-medium">Avocado Toast with Soft Egg</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">16,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Avocat écrasé, épices douces, œuf mollet sur pain au levain (250g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Smoked Salmon Toast</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">18,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Saumon fumé de qualité, cream cheese à l'aneth, pickles (250g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Mushroom Toast</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">15,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Poêlée de champignons de saison, herbes fraîches, ail (220g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Cheese & Kimchi Toastie</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">14,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Croque-monsieur fondant au fromage et kimchi maison (200g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Syrniki</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">14,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Pancakes russes au fromage blanc, crème fraîche, confiture (3-4 pcs / 200g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide text-cherii-accent font-medium">Chicken Katsu Sando</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">16,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Sandwich japonais: Poulet pané croustillant, chou, sauce tonkatsu (280g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Tamago Sando</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">12,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Sandwich moelleux aux œufs crémeux japonais (220g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Cabbage or Mushroom Savory Pie</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">11,90 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Plăcintă sărată de casă, servită cu salată (1 part / 180g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Seasonal Quiche (slice)</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">11,90 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Quiche de saison, pâte brisée pur beurre (1 part / 180g)</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="reveal md:col-span-2 mt-12">
-                <h4 class="text-3xl font-serif italic mb-10 text-cherii-gold border-b border-cherii-gold/20 pb-4">Gaufres Artisanales (Waffles)</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-24 gap-y-10">
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Pistachio Raspberry Waffle</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">15,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Crème de pistache 100%, coulis de framboises fraîches (220g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Apple Caramel Waffle</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">14,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Pommes rôties au caramel beurre salé (220g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Mascarpone Berry Waffle</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">15,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Crème mascarpone légère, fruits rouges frais (220g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Chocolate Sesame Waffle</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">14,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Sauce chocolat noir, pâte de sésame torréfié (220g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Matcha White Chocolate Waffle</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">15,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Ganache chocolat blanc et matcha cérémonial (220g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide text-cherii-accent font-medium">Waffle with Smoked Salmon</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">18,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Gaufre salée, saumon fumé premium, cream cheese (250g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Waffle with Stracciatella & Tomatoes</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">17,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Stracciatella crémeuse, tomates confites, pesto (250g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Waffle with Mushrooms & Soft Egg</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">16,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Poêlée de champignons, œuf coulant (250g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Cheese & Herbs Waffle</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">14,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Fromages fondus, fines herbes fraîches (200g)</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="reveal md:col-span-2 mt-12">
-                <h4 class="text-3xl font-serif italic mb-10 text-cherii-gold border-b border-cherii-gold/20 pb-4">Pâtisseries & Gâteaux (Fait Maison)</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-24 gap-y-10">
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Plain Croissant / Pain au Chocolat</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">4,00 € / 4,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Viennoiserie pur beurre (80g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Kouign-Amann / Spinach Feta Pastry</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">5,50 € / 6,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Feuilletage caramélisé ou chausson salé (90g - 120g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Madeleines (5 pcs) / Choux (filled)</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">6,00 € / 6,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Cuites à la minute ou chou fourré crème diplomate (100g)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide text-cherii-accent font-medium">Medovik</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">8,90 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Gâteau traditionnel, fines couches au miel et crème (1 part)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Pistachio Raspberry Cake</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">10,90 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Signature Cherii, pistaches torréfiées et framboises (1 part)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Matcha Cake</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">8,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Génoise légère et crème onctueuse au matcha (1 part)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Basque Cheesecake / Mille Crêpe Cake</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">9,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Cœur coulant caramélisé ou gâteau aux 20 crêpes (1 part)</span>
-                    </div>
-                    <div class="menu-row flex flex-col">
-                        <div class="flex justify-between items-baseline w-full text-cherii-text">
-                            <span class="text-xl tracking-wide">Apple Tart</span>
-                            <div class="flex-grow border-b border-dotted border-cherii-muted/40 mx-4 relative top-[-6px]"></div>
-                            <span class="font-serif text-2xl text-cherii-gold">7,50 €</span>
-                        </div>
-                        <span class="text-sm text-cherii-muted mt-1 italic">Tartalette aux pommes confites et cannelle (1 part)</span>
-                    </div>
-                </div>
-            </div>
-
+    <!-- ══════════ STATS ══════════ -->
+    <div class="stats-row" id="stats">
+        <div class="stat-block">
+            <span class="stat-num" data-target="40">0</span>
+            <span class="stat-label">Références au menu</span>
         </div>
-    </section>
-
-    <!-- 4. GALERIE / AMBIANCE (final 5.png & final 6.png) -->
-    <section id="ambiance" class="py-32 px-6 md:px-16 max-w-[1600px] mx-auto border-t border-cherii-gold/10">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
-            <!-- Image 5: The Bar -->
-            <div class="img-container reveal shadow-2xl border border-cherii-gold/20">
-                <img src="final 5.png" alt="Le Bar" class="img-editorial w-full h-auto aspect-[4/5] object-cover">
-                <div class="bg-[#161311]/90 p-4 absolute bottom-0 w-full text-center">
-                    <p class="text-xs tracking-[0.2em] uppercase text-cherii-gold font-medium">L'Artisanat</p>
-                </div>
-            </div>
-            
-            <!-- Image 6: Window View -->
-            <div class="img-container reveal delay-200 md:-translate-y-24 shadow-2xl border border-cherii-gold/20">
-                <img src="final 6.png" alt="Vue sur Paris" class="img-editorial w-full h-auto aspect-[3/4] object-cover">
-                <div class="bg-[#161311]/90 p-4 absolute bottom-0 w-full text-center">
-                    <p class="text-xs tracking-[0.2em] uppercase text-cherii-gold font-medium">La Lumière</p>
-                </div>
-            </div>
+        <div class="stat-block">
+            <span class="stat-num" data-target="12">0</span>
+            <span class="stat-label">Origines de café</span>
         </div>
-    </section>
+        <div class="stat-block">
+            <span class="stat-num" data-target="3">0</span>
+            <span class="stat-label">Années d'artisanat</span>
+        </div>
+    </div>
 
-    <!-- 5. FOOTER / CONTACT (final 7.png) -->
-    <footer id="contact" class="relative w-full py-32 parallax-section border-t border-cherii-gold/20" style="background-image: url('final 7.png');">
-        <div class="absolute inset-0 bg-[#161311]/90"></div> 
-        
-        <div class="relative z-10 max-w-[1400px] mx-auto px-6 md:px-16 grid grid-cols-1 md:grid-cols-3 gap-16 text-cherii-text text-center md:text-left drop-shadow-md">
-            
-            <div class="reveal">
-                <h4 class="text-4xl font-serif tracking-[0.2em] uppercase mb-6 text-cherii-gold">CHERII</h4>
-                <p class="font-light tracking-wide text-cherii-text/80 leading-relaxed mb-6">
-                    Votre sanctuaire caféiné.<br>
-                    Esthétique zen, saveurs absolues.
+    <!-- ══════════ HISTOIRE (Story Panels) ══════════ -->
+    <div id="histoire" style="scroll-margin-top: 80px;">
+
+        <!-- Panel 1: L'Origine -->
+        <div class="story-panel" id="story">
+            <div class="story-panel-img">
+                <img src="final 3.png" alt="L'intérieur de Cherii Cafe" id="sp1-img">
+            </div>
+            <div class="story-panel-text">
+                <span class="story-num">01</span>
+                <span class="story-label">L'Origine</span>
+                <h3 class="story-heading">Un espace né<br>d'un rêve de sérénité.</h3>
+                <p class="story-body">
+                    Tout a commencé avec une conviction simple : la ville va trop vite. Les fondateurs de Cherii ont cherché à créer un espace qui résiste au bruit ambiant — un endroit où l'esthétique zen n'est pas un décor, mais une philosophie de vie ancrée dans chaque détail.
+                    <br><br>
+                    Les murs de bois brut, les lanternes en papier washi, la végétation intérieure soigneusement choisie — tout parle d'une intention : ralentir le temps, pour ceux qui le souhaitent.
                 </p>
             </div>
+        </div>
 
-            <div class="reveal delay-100 flex flex-col justify-center">
-                <h5 class="text-xs tracking-[0.3em] uppercase text-cherii-accent mb-6 font-medium">Adresse</h5>
-                <p class="font-light tracking-wide text-cherii-text/90 leading-relaxed">
-                    12 Rue des Francs Bourgeois<br>
-                    75003 Paris, France<br><br>
-                    <a href="mailto:bonjour@cheriicafe.fr" class="hover:text-cherii-gold transition-colors font-medium">bonjour@cheriicafe.fr</a>
-                </p>
+        <!-- Panel 2: Le Café -->
+        <div class="story-panel">
+            <div class="story-panel-img">
+                <img src="final 5.png" alt="Le bar de Cherii Cafe" id="sp2-img">
             </div>
-
-            <div class="reveal delay-200 flex flex-col justify-center">
-                <h5 class="text-xs tracking-[0.3em] uppercase text-cherii-accent mb-6 font-medium">Horaires</h5>
-                <ul class="font-light tracking-wide text-cherii-text/90 space-y-3">
-                    <li class="flex justify-between md:justify-start md:gap-8">
-                        <span class="w-24">Lun - Ven</span>
-                        <span class="font-medium">08:30 - 19:00</span>
-                    </li>
-                    <li class="flex justify-between md:justify-start md:gap-8">
-                        <span class="w-24">Samedi</span>
-                        <span class="font-medium">09:30 - 20:00</span>
-                    </li>
-                    <li class="flex justify-between md:justify-start md:gap-8 text-cherii-gold/90">
-                        <span class="w-24">Dimanche</span>
-                        <span class="font-medium">10:00 - 18:00</span>
-                    </li>
-                </ul>
+            <div class="story-panel-text">
+                <span class="story-num">02</span>
+                <span class="story-label">Le Café</span>
+                <h3 class="story-heading">L'art du grain,<br>porté à l'essentiel.</h3>
+                <p class="story-body">
+                    Nous sélectionnons nos cafés auprès de torréfacteurs de spécialité qui partagent notre exigence. Chaque origine raconte un terroir, un producteur, une saison. Du V60 lent et poétique au ristretto concentré — chaque extraction est un geste réfléchi.
+                    <br><br>
+                    Notre Black Sesame Latte et notre Pistachio Latte sont devenus signatures : des créations qui marient technique et créativité, pour une expérience inattendue.
+                </p>
             </div>
         </div>
 
-        <div class="relative z-10 max-w-[1400px] mx-auto px-6 md:px-16 mt-24 pt-8 border-t border-cherii-gold/20 flex flex-col md:flex-row justify-between items-center text-xs tracking-widest text-cherii-text/60 font-light reveal delay-300">
-            <p>&copy; 2026 CHERII CAFE. All rights reserved.</p>
-            <div class="flex space-x-6 mt-4 md:mt-0">
-                <a href="#" class="hover:text-cherii-gold transition-colors">Mentions Légales</a>
-                <a href="#" class="hover:text-cherii-gold transition-colors">CGV</a>
+        <!-- Panel 3: La Table -->
+        <div class="story-panel">
+            <div class="story-panel-img">
+                <img src="final 6.png" alt="Vue sur Paris depuis Cherii" id="sp3-img">
+            </div>
+            <div class="story-panel-text">
+                <span class="story-num">03</span>
+                <span class="story-label">La Table</span>
+                <h3 class="story-heading">Des saveurs qui<br>traversent les cultures.</h3>
+                <p class="story-body">
+                    Notre carte brunch puise dans plusieurs traditions culinaires — le Chicken Katsu Sando du Japon, les Syrniki de Russie, l'Avocado Toast revisité avec des épices douces. Chaque plat est pensé pour nourrir autant l'esprit que le corps.
+                    <br><br>
+                    La pâtisserie suit la même logique : du Medovik au miel au Pistachio Raspberry Cake — nos créations sont à la fois visuelles et profondes, faites pour être savourées lentement.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══════════ MARQUEE 2 ══════════ -->
+    <div class="marquee-wrap" style="margin-top:0;">
+        <div class="marquee-track reverse">
+            <span class="marquee-item">Black Sesame Latte</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Pistachio Raspberry Cake</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Chicken Katsu Sando</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item highlight italic">Strawberry Matcha</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Medovik</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Yuzu Tonic</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Black Sesame Latte</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Pistachio Raspberry Cake</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Chicken Katsu Sando</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item highlight italic">Strawberry Matcha</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Medovik</span>
+            <span class="marquee-item highlight">·</span>
+            <span class="marquee-item">Yuzu Tonic</span>
+            <span class="marquee-item highlight">·</span>
+        </div>
+    </div>
+
+    <!-- ══════════ MENU ══════════ -->
+    <section id="menu-section" style="scroll-margin-top:80px;">
+        <div id="menu-section" style="padding: clamp(80px,10vw,160px) clamp(24px,8vw,120px) clamp(40px,5vw,80px);">
+            <div style="text-align:center; margin-bottom:64px;">
+                <span style="font-size:0.6rem;letter-spacing:0.5em;text-transform:uppercase;color:#a63c3c;display:block;margin-bottom:12px;">Dégustation</span>
+                <h2 style="font-family:'Cormorant Garamond',serif;font-size:clamp(3rem,7vw,6rem);font-weight:300;color:#f5f0e6;">La Carte</h2>
+            </div>
+            <div class="menu-tabs">
+                <button class="menu-tab active" data-tab="coffee">Café</button>
+                <button class="menu-tab" data-tab="matcha">Matcha & Thés</button>
+                <button class="menu-tab" data-tab="cold">Boissons Fraîches</button>
+                <button class="menu-tab" data-tab="food">Brunch & Toasts</button>
+                <button class="menu-tab" data-tab="pastry">Pâtisserie</button>
+            </div>
+        </div>
+
+        <!-- COFFEE -->
+        <div class="menu-panel active" id="tab-coffee" style="padding:0 clamp(24px,8vw,120px) clamp(60px,8vw,120px);">
+            <div class="menu-grid">
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Espresso & Classics</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Espresso</span><span class="menu-item-desc">Extrait pur et intense (30ml)</span></div><span class="menu-item-price">2,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Double Espresso</span><span class="menu-item-desc">Double dose de café de spécialité (60ml)</span></div><span class="menu-item-price">3,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Americano</span><span class="menu-item-desc">Small (240ml) / Large (350ml)</span></div><span class="menu-item-price">3,50 / 4,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Cappuccino</span><span class="menu-item-desc">Espresso et lait texturé soyeux (180ml)</span></div><span class="menu-item-price">4,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Flat White</span><span class="menu-item-desc">Double ristretto, micro-mousse de lait fine (180ml)</span></div><span class="menu-item-price">4,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Latte</span><span class="menu-item-desc">Espresso doux et lait monté (250ml)</span></div><span class="menu-item-price">5,00 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Filter Coffee</span><span class="menu-item-desc">Extraction lente V60, pure origine (250ml)</span></div><span class="menu-item-price">4,50 €</span></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Signatures</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name special">Black Sesame Latte</span><span class="menu-item-desc">Pâte de sésame noir torréfié maison, espresso, lait (250ml)</span></div><span class="menu-item-price">8,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name special">Pistachio Latte</span><span class="menu-item-desc">Purée de pistache 100%, espresso, lait texturé (250ml)</span></div><span class="menu-item-price">8,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Seasonal Latte</span><span class="menu-item-desc">Sirop artisanal de saison, espresso, lait (250ml)</span></div><span class="menu-item-price">6,00 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Orange Espresso Tonic</span><span class="menu-item-desc">Double espresso, tonic artisanal, zestes d'orange (300ml)</span></div><span class="menu-item-price">7,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Salted Vanilla Latte</span><span class="menu-item-desc">Sirop de vanille de Madagascar, pointe de sel (250ml)</span></div><span class="menu-item-price">6,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Tiramisu Latte</span><span class="menu-item-desc">Inspiré du dessert italien, poudre de cacao fine (250ml)</span></div><span class="menu-item-price">7,50 €</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MATCHA & TEA -->
+        <div class="menu-panel" id="tab-matcha" style="padding:0 clamp(24px,8vw,120px) clamp(60px,8vw,120px);">
+            <div class="menu-grid">
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Matcha</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Matcha Latte</span><span class="menu-item-desc">Matcha de Cérémonie d'Uji, monté au fouet bambou (250ml)</span></div><span class="menu-item-price">6,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name special">Strawberry Matcha</span><span class="menu-item-desc">Purée de fraises fraîches, lait, matcha cérémonial (300ml)</span></div><span class="menu-item-price">7,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Iced Matcha</span><span class="menu-item-desc">Version glacée rafraîchissante (300ml)</span></div><span class="menu-item-price">6,50 €</span></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Thés & Hojicha</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Hojicha Latte</span><span class="menu-item-desc">Thé vert japonais torréfié, notes fumées (250ml)</span></div><span class="menu-item-price">6,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Genmaicha Latte</span><span class="menu-item-desc">Thé vert au riz brun soufflé (250ml)</span></div><span class="menu-item-price">5,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Iced Hojicha</span><span class="menu-item-desc">Version glacée rafraîchissante (300ml)</span></div><span class="menu-item-price">6,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Jasmine / Sencha / Oolong / Black Tea</span><span class="menu-item-desc">Thé en vrac premium infusé à la minute (300ml)</span></div><span class="menu-item-price">4,50 €</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLD DRINKS -->
+        <div class="menu-panel" id="tab-cold" style="padding:0 clamp(24px,8vw,120px) clamp(60px,8vw,120px);">
+            <div class="menu-grid">
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Boissons Fraîches</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name special">Yuzu Tonic</span><span class="menu-item-desc">Agrume japonais yuzu, tonic artisanal (300ml)</span></div><span class="menu-item-price">8,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Coffee Tonic</span><span class="menu-item-desc">Tonic de qualité surmonté d'un shot d'espresso (300ml)</span></div><span class="menu-item-price">6,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">In-house Lemonade / Berry Soda</span><span class="menu-item-desc">Limonade maison pressée à froid (300ml)</span></div><span class="menu-item-price">6,00 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Seasonal Cream-top Drink</span><span class="menu-item-desc">Boisson froide, crème fouettée parfumée (250ml)</span></div><span class="menu-item-price">7,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Sparkling Tea / Fruit Tea</span><span class="menu-item-desc">Infusion pétillante au verre (200ml)</span></div><span class="menu-item-price">6,50 €</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOD -->
+        <div class="menu-panel" id="tab-food" style="padding:0 clamp(24px,8vw,120px) clamp(60px,8vw,120px);">
+            <div class="menu-grid">
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Toasts</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name special">Avocado Toast with Soft Egg</span><span class="menu-item-desc">Avocat écrasé, épices douces, œuf mollet sur pain au levain (250g)</span></div><span class="menu-item-price">16,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Smoked Salmon Toast</span><span class="menu-item-desc">Saumon fumé, cream cheese à l'aneth, pickles (250g)</span></div><span class="menu-item-price">18,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Mushroom Toast</span><span class="menu-item-desc">Poêlée de champignons de saison, herbes fraîches, ail (220g)</span></div><span class="menu-item-price">15,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Cheese & Kimchi Toastie</span><span class="menu-item-desc">Croque-monsieur fondant au fromage et kimchi maison (200g)</span></div><span class="menu-item-price">14,50 €</span></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Sandos & Brunch</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name special">Chicken Katsu Sando</span><span class="menu-item-desc">Poulet pané croustillant, chou, sauce tonkatsu (280g)</span></div><span class="menu-item-price">16,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Tamago Sando</span><span class="menu-item-desc">Sandwich moelleux aux œufs crémeux japonais (220g)</span></div><span class="menu-item-price">12,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Syrniki</span><span class="menu-item-desc">Pancakes russes au fromage blanc, crème fraîche, confiture (200g)</span></div><span class="menu-item-price">14,50 €</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASTRY -->
+        <div class="menu-panel" id="tab-pastry" style="padding:0 clamp(24px,8vw,120px) clamp(60px,8vw,120px);">
+            <div class="menu-grid">
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Pâtisseries</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Madeleines (5 pcs) / Choux</span><span class="menu-item-desc">Cuites à la minute ou chou fourré crème diplomate (100g)</span></div><span class="menu-item-price">6,00 / 6,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name special">Medovik</span><span class="menu-item-desc">Gâteau traditionnel, fines couches au miel et crème (1 part)</span></div><span class="menu-item-price">8,90 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Matcha Cake</span><span class="menu-item-desc">Génoise légère et crème onctueuse au matcha (1 part)</span></div><span class="menu-item-price">8,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Apple Tart</span><span class="menu-item-desc">Tartalette aux pommes confites et cannelle (1 part)</span></div><span class="menu-item-price">7,50 €</span></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="menu-category">
+                        <p class="menu-cat-title">Gâteaux Signatures</p>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name special">Pistachio Raspberry Cake</span><span class="menu-item-desc">Signature Cherii, pistaches torréfiées et framboises (1 part)</span></div><span class="menu-item-price">10,90 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Basque Cheesecake</span><span class="menu-item-desc">Cœur coulant caramélisé (1 part)</span></div><span class="menu-item-price">9,50 €</span></div>
+                        <div class="menu-item"><div class="menu-item-info"><span class="menu-item-name">Mille Crêpe Cake</span><span class="menu-item-desc">Gâteau aux 20 crêpes (1 part)</span></div><span class="menu-item-price">9,50 €</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════ GALLERY ══════════ -->
+    <div id="gallery" style="scroll-margin-top:80px;">
+        <div class="gallery-cell tall" style="aspect-ratio:4/7;">
+            <img src="final 2.png" alt="Atmosphère Cherii" loading="lazy">
+            <div class="caption">L'Atmosphère</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+            <div class="gallery-cell wide">
+                <img src="final 5.png" alt="Le Bar" loading="lazy">
+                <div class="caption">L'Artisanat</div>
+            </div>
+            <div class="gallery-cell wide">
+                <img src="final 6.png" alt="La Lumière" loading="lazy">
+                <div class="caption">La Lumière</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════ RESERVATION ══════════ -->
+    <section id="reservation" style="scroll-margin-top:80px;">
+        <div id="res-bg-text">CHERII</div>
+        <span style="font-size:0.6rem;letter-spacing:0.5em;text-transform:uppercase;color:#a63c3c;display:block;margin-bottom:16px;position:relative;z-index:1;">Votre Moment</span>
+        <h2>Réservation</h2>
+        <p>Réservez votre table pour une expérience immersive au cœur de Paris. Nous accueillons également groupes et événements privés.</p>
+        <a href="mailto:bonjour@cheriicafe.fr?subject=Réservation" class="cta-btn"><span>Réserver une Table</span></a>
+        <p class="cta-note">Ou appelez-nous · <a href="tel:+33142000000">+33 1 42 00 00 00</a></p>
+    </section>
+
+    <!-- ══════════ FOOTER ══════════ -->
+    <footer id="footer" style="scroll-margin-top:80px;">
+        <div>
+            <span class="footer-brand-name">CHERII</span>
+            <p class="footer-tagline">Votre sanctuaire caféiné.<br>Esthétique zen, saveurs absolues.</p>
+            <div class="footer-socials">
+                <a href="#" class="footer-social">Instagram</a>
+                <a href="#" class="footer-social">TikTok</a>
+                <a href="#" class="footer-social">Pinterest</a>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h5>Adresse</h5>
+            <p>12 Rue des Francs Bourgeois<br>75003 Paris, France</p>
+            <a href="mailto:bonjour@cheriicafe.fr" style="margin-top:16px;color:#d4b595;">bonjour@cheriicafe.fr</a>
+        </div>
+        <div class="footer-col">
+            <h5>Horaires</h5>
+            <ul class="footer-hours" style="list-style:none;">
+                <li><span>Lun – Ven</span><span>08:30 – 19:00</span></li>
+                <li><span>Samedi</span><span>09:30 – 20:00</span></li>
+                <li><span>Dimanche</span><span>10:00 – 18:00</span></li>
+            </ul>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 CHERII CAFE. All rights reserved.</p>
+            <div style="display:flex;gap:24px;">
+                <a href="#">Mentions Légales</a>
+                <a href="#">CGV</a>
             </div>
         </div>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const observerOptions = {
-                root: null,
-                rootMargin: '0px',
-                threshold: 0.15
-            };
+    document.addEventListener('DOMContentLoaded', () => {
+        gsap.registerPlugin(ScrollTrigger);
 
-            const observer = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('active');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, observerOptions);
+        /* ── CURSOR ── */
+        const dot  = document.getElementById('c-dot');
+        const ring = document.getElementById('c-ring');
+        let rx = 0, ry = 0, mx = 0, my = 0;
+        document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; dot.style.left = mx+'px'; dot.style.top = my+'px'; });
+        (function animRing() { rx += (mx-rx)*.1; ry += (my-ry)*.1; ring.style.left = rx+'px'; ring.style.top = ry+'px'; requestAnimationFrame(animRing); })();
+        document.querySelectorAll('a,button').forEach(el => {
+            el.addEventListener('mouseenter', () => { dot.style.width='18px'; dot.style.height='18px'; ring.style.width='64px'; ring.style.height='64px'; ring.style.borderColor='rgba(212,181,149,.8)'; });
+            el.addEventListener('mouseleave', () => { dot.style.width='8px'; dot.style.height='8px'; ring.style.width='40px'; ring.style.height='40px'; ring.style.borderColor='rgba(212,181,149,.4)'; });
+        });
 
-            document.querySelectorAll('.reveal').forEach((el) => {
-                observer.observe(el);
+        /* ── LOADER ── */
+        const tl = gsap.timeline({ onComplete: () => {
+            document.getElementById('loader').style.pointerEvents = 'none';
+            startHeroAnim();
+        }});
+        tl.to('#loader-name span', { y: 0, duration: 1.2, stagger: 0.06, ease: 'expo.out', delay: 0.3 })
+          .to('#loader-line', { width: '200px', duration: 1, ease: 'expo.out' }, '-=0.6')
+          .to('#loader-sub', { opacity: 1, duration: 0.6 }, '-=0.3')
+          .to('#loader', { opacity: 0, duration: 0.8, ease: 'power2.inOut', delay: 0.5 })
+          .set('#loader', { display: 'none' });
+
+        /* ── HERO ANIM ── */
+        function startHeroAnim() {
+            const heroTl = gsap.timeline();
+            heroTl
+              .to('#hero-bg', { scale: 1, duration: 2.5, ease: 'expo.out' })
+              .to('.word .inner', { y: 0, duration: 1.4, stagger: 0.15, ease: 'expo.out' }, '-=2')
+              .to('#hero-eyebrow', { opacity: 1, y: 0, duration: 0.8, ease: 'expo.out' }, '-=1')
+              .to('#hero-sub', { opacity: 1, duration: 0.8, ease: 'expo.out' }, '-=0.6')
+              .to('#hero-scroll', { opacity: 1, duration: 0.8 }, '-=0.4');
+        }
+
+        /* ── HEADER SCROLL ── */
+        const header = document.getElementById('main-header');
+        ScrollTrigger.create({
+            start: 'top -80',
+            onEnter: () => header.classList.add('scrolled'),
+            onLeaveBack: () => header.classList.remove('scrolled')
+        });
+
+        /* ── HERO BG PARALLAX ── */
+        gsap.to('#hero-bg', {
+            yPercent: 30,
+            ease: 'none',
+            scrollTrigger: { trigger: '#hero', start: 'top top', end: 'bottom top', scrub: true }
+        });
+
+        /* ── MANIFESTO WORD REVEAL ── */
+        const words = document.querySelectorAll('#manifesto-text .word');
+        // wrap words for manifesto
+        const mText = document.getElementById('manifesto-text');
+        mText.innerHTML = mText.innerHTML.replace(/(\b\w+\b)/g, (m, w) => `<span class="word" style="display:inline-block;opacity:0;transform:translateY(12px)">${w}</span> `);
+        gsap.to('#manifesto-text .word', {
+            opacity: 1, y: 0, duration: 0.6, stagger: 0.04, ease: 'expo.out',
+            scrollTrigger: { trigger: '#manifesto', start: 'top 70%' }
+        });
+
+        /* ── STORY PANEL PARALLAX ── */
+        ['sp1-img','sp2-img','sp3-img'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            gsap.to(el, {
+                yPercent: -12,
+                ease: 'none',
+                scrollTrigger: { trigger: el.closest('.story-panel'), start: 'top bottom', end: 'bottom top', scrub: true }
             });
         });
+
+        /* ── STORY TEXT REVEAL ── */
+        document.querySelectorAll('.story-panel-text').forEach(el => {
+            gsap.from(el.children, {
+                opacity: 0, y: 40, duration: 1, stagger: 0.12, ease: 'expo.out',
+                scrollTrigger: { trigger: el, start: 'top 75%' }
+            });
+        });
+
+        /* ── STATS COUNTER ── */
+        document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+            const target = +el.dataset.target;
+            ScrollTrigger.create({
+                trigger: el,
+                start: 'top 85%',
+                once: true,
+                onEnter: () => {
+                    gsap.to({ val: 0 }, {
+                        val: target, duration: 1.8, ease: 'power2.out',
+                        onUpdate: function() { el.textContent = Math.round(this.targets()[0].val) + (target === 3 ? '' : '+'); }
+                    });
+                }
+            });
+        });
+
+        /* ── GALLERY PARALLAX ── */
+        document.querySelectorAll('.gallery-cell img').forEach(img => {
+            gsap.to(img, {
+                yPercent: -8,
+                ease: 'none',
+                scrollTrigger: { trigger: img.parentElement, start: 'top bottom', end: 'bottom top', scrub: true }
+            });
+        });
+
+        /* ── RESERVATION TEXT ── */
+        gsap.from('#reservation h2, #reservation p, #reservation .cta-btn, #reservation .cta-note', {
+            opacity: 0, y: 30, duration: 1, stagger: 0.12, ease: 'expo.out',
+            scrollTrigger: { trigger: '#reservation', start: 'top 70%' }
+        });
+
+        /* ── MOBILE MENU ── */
+        const hamburger = document.getElementById('hamburger');
+        const mobileNav = document.getElementById('mobile-nav');
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('open');
+            mobileNav.classList.toggle('open');
+            document.body.style.overflow = mobileNav.classList.contains('open') ? 'hidden' : '';
+        });
+        mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+            hamburger.classList.remove('open');
+            mobileNav.classList.remove('open');
+            document.body.style.overflow = '';
+        }));
+
+        /* ── MENU TABS ── */
+        document.querySelectorAll('.menu-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.menu-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                const panel = document.getElementById('tab-' + tab.dataset.tab);
+                if (panel) {
+                    panel.classList.add('active');
+                    gsap.from(panel.querySelectorAll('.menu-item'), { opacity: 0, x: -16, duration: 0.5, stagger: 0.025, ease: 'expo.out' });
+                }
+            });
+        });
+
+        /* ── FOOTER REVEAL ── */
+        gsap.from('#footer > *', {
+            opacity: 0, y: 30, duration: 1, stagger: 0.1, ease: 'expo.out',
+            scrollTrigger: { trigger: '#footer', start: 'top 80%' }
+        });
+    });
     </script>
 </body>
 </html>
