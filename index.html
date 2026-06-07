@@ -120,7 +120,13 @@
         #hamburger.open .hb:nth-child(1) { transform: translateY(6px) rotate(45deg); }
         #hamburger.open .hb:nth-child(2) { opacity: 0; }
         #hamburger.open .hb:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
-        @media (max-width: 768px) { #hamburger { display: flex; } #desktop-nav { display: none; } }
+        /* Desktop nav */
+        #desktop-nav { display: flex; gap: 40px; }
+
+        @media (max-width: 768px) {
+            #desktop-nav  { display: none !important; }
+            #hamburger    { display: flex; }
+        }
 
         /* mobile nav overlay */
         #mobile-nav {
@@ -564,7 +570,7 @@
     <!-- HEADER -->
     <header id="main-header">
         <a href="#" style="font-family:'Cormorant Garamond',serif; font-size:1.6rem; letter-spacing:0.3em; text-transform:uppercase; color:#f5f0e6; text-decoration:none;">CHERII</a>
-        <nav id="desktop-nav" style="display:flex; gap:40px;">
+        <nav id="desktop-nav">
             <a href="#histoire" class="nav-link">Histoire</a>
             <a href="#menu-section" class="nav-link">La Carte</a>
             <a href="#gallery" class="nav-link">Ambiance</a>
